@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Stop 1</title>
+</head>
+<body>
+	<h1 id='stop-num'>Stop {{ delivery.stop_num }}</h1>
+	<p id='delivered'>{{ delivery.get_status_display }}</p>
+	<h2 id='main-contact'>{{ delivery.main_contact }}</h2>
+	<form method="POST">
+		{% csrf_token %}
+		<button id='mark-complete' name="status" type="submit" value='2'>Mark delivered</button>
+		<button id='mark-failed' name="status" type="submit" value='3'>Mark failed</button>
+	</form>
+</body>
+</html>
