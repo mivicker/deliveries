@@ -1,5 +1,6 @@
 import time
 import os
+import random
 from urllib.parse import urljoin
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
@@ -116,4 +117,10 @@ class FirstTest(StaticLiveServerTestCase):
 		self.assertIn(stop_num.text, ['Stop 3'])
 
 	def test_view_route(self):
-		pass
+		token = Token.objects.first()
+		url = urljoin(self.live_server_url, token.value)
+		self.browser.get(url)
+
+		stops = self.browser.find_elements_by_class_name('stop-num')
+
+		self.assertIn(2, [stop.text for stop in stops])

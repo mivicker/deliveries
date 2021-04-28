@@ -1,3 +1,5 @@
+import uuid
+from datetime import date
 from django.db import models
 from django.urls import reverse
 
@@ -21,4 +23,15 @@ class Delivery(models.Model):
     	return reverse('stop_view', args=(str(self.stop_num)))
 
 class Route(models.Model):
-	driver = models.CharField(max_length=100)
+	date = models.DateField(default=date.today)
+	driver = models.CharField(max_length=255, default='Mike')
+
+	def __str__(self):
+		return f"{self.date} {self.driver}"
+
+def generate_token():
+	return str(uuid.uuid4())
+
+class Token(models.Model):
+	value = models.CharField(max_length=255, default=generate_token)
+	route = models.ForeignKey(Route)
