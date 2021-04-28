@@ -1,22 +1,45 @@
 import time
 import os
+from urllib.parse import urljoin
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
-from deliveries.models import Delivery
+from deliveries.models import Delivery, Route
 
 class FirstTest(StaticLiveServerTestCase):
 	def setUp(self):
 		self.browser = webdriver.Firefox()
-		Delivery.objects.create(
-			stop_num = 1,
-			main_contact = 'Mark',
-			status = 1
-			)
+		self.names = ['Mark', 'Harvey', 'Susu']
+
+		names = ['Mark', 'Harvey', 'Susu']
+		stops = [1, 2, 1]
+		route_nums = [0, 0, 1]
+		drivers = ['Lou', 'Kerry']
+
+		for driver, route in zip(drivers, set(route_nums)):
+			Route.objects.create(driver = driver)
+		
+		all_routes = Route.objects.all()
+		routes = [all_routes[i] for i in route_nums]
+
+		for name, stop, route in zip(names, stops, routes):
+			Delivery.objects.create(
+				route = route,
+				stop_num = stop,
+				main_contact = name,
+				status = 1
+				)
 
 	def tearDown(self):
 		self.browser.quit()
+
+	def test_home_page(self):
+		self.browser.get(self.live_server_url)
+		contacts = self.browser.find_elements_by_class_name('main-contact')
+
+		for name in self.names:
+			self.assertIn(name, [contact.text for contact in contacts])
 
 	def test_stop_view_success(self):
 		"""
@@ -24,7 +47,8 @@ class FirstTest(StaticLiveServerTestCase):
 		drivers to mark the stop as delivered or failed, and allow the
 		driver to add comments.
 		"""
-		self.browser.get(self.live_server_url)
+		stop_1_url = urljoin(self.live_server_url, '1')
+		self.browser.get(stop_1_url)
 		
 		#check for stop number
 		stop_num = self.browser.find_element_by_id('stop-num')
@@ -54,8 +78,9 @@ class FirstTest(StaticLiveServerTestCase):
 		drivers to mark the stop as delivered or failed, and allow the
 		driver to add comments.
 		"""
-		self.browser.get(self.live_server_url)
-		
+		stop_1_url = urljoin(self.live_server_url, '1')
+		self.browser.get(stop_1_url)
+
 		#check for stop number
 		stop_num = self.browser.find_element_by_id('stop-num')
 		self.assertRegex(stop_num.text, 'Stop [0-9]+')
@@ -78,7 +103,17 @@ class FirstTest(StaticLiveServerTestCase):
 		delivered = self.browser.find_element_by_id('delivered')
 		self.assertIn(delivered.text, ['Failed'])
 
-	def test_second_stop(self):
-		self.browser.get(self.live_server_url)
+	def test_stop_nums(self):
+		stop_2_url = urljoin(self.live_server_url, '2')
+
+		self.browser.get(stop_2_url)
 		stop_num = self.browser.find_element_by_id('stop-num')
 		self.assertIn(stop_num.text, ['Stop 2'])
+
+		stop_3_url = urljoin(self.live_server_url, '3')
+		self.browser.get(stop_3_url)
+		stop_num = self.browser.find_element_by_id('stop-num')
+		self.assertIn(stop_num.text, ['Stop 3'])
+
+	def test_view_route(self):
+		pass
