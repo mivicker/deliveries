@@ -15,10 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from deliveries.views import stop_view, home_view
+from deliveries.views import stop_view, route_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home_view, name='home'),
-    path('<stop_num>', stop_view, name='stop_view'),
+    path('<token_value>', route_view, name='route_view'),
+    path('<token_value>/<stop_num>', stop_view, name='stop_view'),
 ]

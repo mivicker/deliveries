@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Welcome to secundarius</title>
+</head>
+<body>
+	<h1>
+		<span id='driver-name'>{{ route.driver }}</span>'s route for <span id='date'>{{ route.date }}</span>
+	</h1>
+
+	{% for delivery in route.delivery_set.all %}
+	<p>
+		<a href='{{ delivery.get_absolute_url }}'>
+			<span class='stop-num'>{{ delivery.stop_num }}</span>
+		</a>
+		<span class='main-contact'>{{ delivery.main_contact }}</span>
+	</p>
+	{% endfor %}
+</body>
+</html>

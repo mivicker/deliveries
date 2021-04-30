@@ -5,7 +5,8 @@ from django.urls import reverse
 
 class Delivery(models.Model):
     stop_num = models.SmallIntegerField()
-    route = models.ForeignKey('Route', on_delete=models.CASCADE, null=True, blank=False)
+    route = models.ForeignKey('Route', 
+    	on_delete=models.CASCADE, null=True, blank=False)
     main_contact = models.CharField(
         max_length=200, default='CLIENT', blank=False, null=False)
     status_choices = [
@@ -20,7 +21,9 @@ class Delivery(models.Model):
         verbose_name_plural = 'Deliveries'
 
     def get_absolute_url(self):
-    	return reverse('stop_view', args=(str(self.stop_num)))
+    	token = self.route.token_set.first()
+    	return reverse('stop_view', 
+    		kwargs={'token_value':str(token.value), 'stop_num': str(self.stop_num)})
 
 class Route(models.Model):
 	date = models.DateField(default=date.today)
@@ -34,4 +37,4 @@ def generate_token():
 
 class Token(models.Model):
 	value = models.CharField(max_length=255, default=generate_token)
-	route = models.ForeignKey(Route)
+	route = models.ForeignKey(Route, on_delete=models.CASCADE)
