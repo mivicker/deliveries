@@ -1,20 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Welcome to secundarius</title>
-</head>
-<body>
-	<h1>
-		<span id='driver-name'>{{ route.driver }}</span>'s route for <span id='date'>{{ route.date }}</span>
-	</h1>
-
+{% extends 'deliveries/base.html' %}
+{% block 'content' %}
+	<div class="row">
+		<div class="driver-title">
+			<h1>
+				<span id='driver-name'>{{ route.driver }}</span>'s route for <span id='date'>{{ route.date }}</span>
+			</h1>
+		</div>
+	</div>
 	{% for delivery in route.delivery_set.all %}
-	<p>
-		<a href='{{ delivery.get_absolute_url }}'>
-			<span class='stop-num'>{{ delivery.stop_num }}</span>
-		</a>
-		<span class='main-contact'>{{ delivery.main_contact }}</span>
-	</p>
+		<div class='delivery-card'>
+			<div class='card-title'>
+				<div class='row'>
+					<div class="one column">
+						<h2><span class='stop-num'>{{ delivery.stop_num }}</span></h2>
+					</div>
+					<div class='seven columns'>
+						<a href='{{ delivery.get_absolute_url }}'>
+							<h2>
+								<span class='main-contact'>{{ delivery.main_contact }}</span>
+							</h2>
+						</a>
+					</div>
+					<div class='four columns'>
+						<h2>{{ delivery.get_status_display }}</h2>
+				</div>
+			</div>
+		</div>
+			
+			<div class='row'>
+				<div class='nine columns offset-by-one'>
+					<h3>{{ delivery.street_address }} {{ delivery.city }}, {{ delivery.zip_code }}</h3>
+				</div>
+			</div>
+				<div class='row'>
+
+				<div class='nine columns offset-by-one'>
+					<h3>{{ delivery.phone }}</h3>
+					<p>		
+						{% if delivery.text_opt_in %}
+							Accepts texts.
+						{% else %}
+						{% endif %}
+					</p>
+				</div>
+			</div>
+			
+		</div>
 	{% endfor %}
-</body>
-</html>
+{% endblock %}

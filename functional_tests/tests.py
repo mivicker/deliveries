@@ -3,17 +3,25 @@ import os
 import random
 import datetime
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.conf import settings
+from deliveries.models import Delivery, Route, Token
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
-from deliveries.models import Delivery, Route, Token
+from selenium.webdriver.support.select import Select
 
-class FirstTest(StaticLiveServerTestCase):
+def test_order(lst):
+    for i in range(len(lst) - 1):
+        if lst[i] > lst[i + 1]:
+            return False
+    return True
+
+class RouteStopPagesTests(StaticLiveServerTestCase):
 	def setUp(self):
 		self.browser = webdriver.Firefox()
 
 		self.names = ['Mark', 'Melon', 'Nelly', 'Harvey', 'Susu']
-		stops = [1, 2, 3, 1, 2]
+		stops = [1, 2, 3, 2, 1]
 		route_nums = [0, 0, 0, 1, 1]
 		self.drivers = ['Lou', 'Kerry']
 
@@ -32,8 +40,20 @@ class FirstTest(StaticLiveServerTestCase):
 				status = 1
 				)
 
+		test_route = Route.objects.get(driver = 'Lou')
+		self.test_token = test_route.token_set.first()
+
 	def tearDown(self):
 		self.browser.quit()
+
+	def check_stop_list(self):
+		stops = self.browser.find_elements_by_class_name('stop-num')
+
+		self.assertIn('1', [stop.text for stop in stops])
+		self.assertIn('2', [stop.text for stop in stops])
+
+		nums = [int(stop.text) for stop in stops]
+		self.assertTrue(test_order(nums))
 
 	def test_stop_view_success(self):
 		"""
@@ -42,7 +62,7 @@ class FirstTest(StaticLiveServerTestCase):
 		driver to add comments.
 		"""
 
-		token = Token.objects.first()
+		token = self.test_token
 
 		stop_1_url = f'{self.live_server_url}/{token.value}/1'
 		self.browser.get(stop_1_url)
@@ -75,7 +95,7 @@ class FirstTest(StaticLiveServerTestCase):
 		drivers to mark the stop as delivered or failed, and allow the
 		driver to add comments.
 		"""
-		token = Token.objects.first()
+		token = self.test_token
 		stop_1_url = f'{self.live_server_url}/{token.value}/1'
 		self.browser.get(stop_1_url)
 
@@ -102,7 +122,7 @@ class FirstTest(StaticLiveServerTestCase):
 		self.assertIn(delivered.text, ['Failed'])
 
 	def test_different_stops(self):
-		token = Token.objects.first()
+		token = self.test_token
 		stop_2_url = f'{self.live_server_url}/{token.value}/2'
 
 		self.browser.get(stop_2_url)
@@ -115,34 +135,30 @@ class FirstTest(StaticLiveServerTestCase):
 		self.assertIn(stop_num.text, ['Stop 3'])
 
 	def test_click_back_to_route(self):
-		token = Token.objects.first()
+		token = self.test_token
 		url = f'{self.live_server_url}/{token.value}/1'
 		self.browser.get(url)
-		self.browser.find_element_by_link_text('All Deliveries')
+		link = self.browser.find_element_by_link_text('All Deliveries')
+		link.click()
 
 		time.sleep(0.5)
 
-		stops = self.browser.find_elements_by_class_name('stop-num')
-
-		self.assertIn('1', [stop.text for stop in stops])
-		self.assertIn('2', [stop.text for stop in stops])
+		#ordered list test
+		self.check_stop_list()
 	
 	def test_view_route(self):
-		token = Token.objects.first()
+		token = self.test_token
 		url = f'{self.live_server_url}/{token.value}'
 		self.browser.get(url)
 
 		date = self.browser.find_element_by_id('date')
-		test_date = datetime.date.today().strftime('%B %d, %Y')
+		test_date = datetime.date.today().strftime('%B %-d, %Y')
 		self.assertIn(date.text, [str(test_date)])
 
 		driver = self.browser.find_element_by_id('driver-name')
 		self.assertIn(driver.text, self.drivers)
 
-		stops = self.browser.find_elements_by_class_name('stop-num')
-
-		self.assertIn('1', [stop.text for stop in stops])
-		self.assertIn('2', [stop.text for stop in stops])
+		self.check_stop_list()
 
 		#test click through to stop
 		link = self.browser.find_element_by_link_text('1')
@@ -153,12 +169,94 @@ class FirstTest(StaticLiveServerTestCase):
 		contact = self.browser.find_element_by_id('main-contact')
 		self.assertIn(contact.text, ['Mark'])
 
-	#def test_inactive_route(self):
-	#	self.fail("Test an inactive route!")
+	def test_stop_order(self):
+		token = self.test_token
+		url = f'{self.live_server_url}/{token.value}'
+		self.browser.get(url)
 
-	#def test_out_of_order_tokens(self):
-	#	pass
+		self.check_stop_list()
 
-	#def test_create_routes(self):
-	#	self.fail("Test creating a route!")
-	#	self.fail("Test that the stops are ordering correctly.")
+class RouteUploadTest(StaticLiveServerTestCase):
+	def setUp(self):
+		self.browser = webdriver.Firefox()
+
+	def tearDown(self):
+		self.browser.quit()
+
+	def check_stop_list(self):
+		stops = self.browser.find_elements_by_class_name('stop-num')
+
+		self.assertIn('1', [stop.text for stop in stops])
+		self.assertIn('2', [stop.text for stop in stops])
+
+		nums = [int(stop.text) for stop in stops]
+		self.assertTrue(test_order(nums))
+
+	def test_csv_upload(self):
+		#Put up the upload page at home. This will be password 
+		#protected later.
+
+		self.browser.get(self.live_server_url)
+		
+		#selecting the correct date
+		test_date = '2021-05-03'
+
+		date_box = self.browser.find_element_by_id('id_date')
+		date_box.send_keys(test_date)
+
+		#inputting the file to be uploaded
+		uploader = self.browser.find_element_by_id('upload-csv')
+		csv_path = os.path.join(settings.BASE_DIR, 'functional_tests', 'test.csv')
+		
+		uploader.send_keys(csv_path)
+		button = self.browser.find_element_by_id('upload')
+		button.click()
+
+		time.sleep(0.5)
+
+		success = self.browser.find_element_by_id('success-message')
+		self.assertIn(success.text, ['CSV successfully uploaded'])
+
+		time.sleep(0.5)
+
+		route = Route.objects.first()
+		token = Token.objects.create(route=route)
+
+		route_url = f'{self.live_server_url}/{token.value}'
+		self.browser.get(route_url)
+		self.check_stop_list()
+
+		test_date = datetime.date.fromisoformat(test_date)
+		date = self.browser.find_element_by_id('date')
+		self.assertIn(date.text, [test_date.strftime('%B %-d, %Y')])
+
+class RouteAssignmentTest(StaticLiveServerTestCase):
+	def setUp(self):
+		self.browser = webdriver.Firefox()
+		
+
+	def tearDown(self):
+		self.browser.quit()
+
+	def test_route_assignment(self):
+		pass
+
+class AllRouteViewTest(StaticLiveServerTestCase):
+	def setUp(self):
+		self.browser = webdriver.Firefox()
+		date = '2021-06-21'
+		self.drivers = ['Harvey', 'Susu', 'Kristyn', 'Penelope']
+		routes = [Route(driver=driver, date=date) for driver in self.drivers]
+		Route.objects.create(routes)
+
+	def tearDown(self):
+		self.browser.quit()
+
+	def test_all_route_view(self):
+		self.browser.get(f'{self.live_server_url}/routes')
+
+		names = self.browser.find_elements_by_class_name('driver-name')
+		names = [driver.text for driver in names]
+
+		for name in names:
+			self.assertIn(name, self.drivers)

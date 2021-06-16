@@ -1,0 +1,8 @@
+{% extends 'deliveries/base.html' %}
+{% block 'content' %}
+	<form enctype="multipart/form-data" method="POST">
+		{% csrf_token %}
+			<div>{{ form }}</div>
+			<div><button id="upload" type="submit">Upload</button></div>
+	</form>
+{% endblock %}

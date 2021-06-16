@@ -1,0 +1,20 @@
+.body {
+	font-family: "Franklin Gothic";
+}
+
+.driver-title {
+	margin-top: 2em;
+}
+
+.delivery-card {
+	padding: 1em;
+	margin-bottom: 1em;
+	border-style: dotted;
+	border-color: lightblue;
+	border-width: 1px;
+}
+
+.card-title {
+	border-bottom: 1px dotted lightblue;
+	margin-bottom: 1em;
+}

@@ -15,10 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from deliveries.views import stop_view, route_view
+from deliveries.views import (stop_view, route_view, stale_token_view, 
+    upload_view, upload_success_view)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
+    path('', upload_view, name='upload'),
     path('<token_value>', route_view, name='route_view'),
     path('<token_value>/<stop_num>', stop_view, name='stop_view'),
+    path('stale-token/', stale_token_view, name='stale_token'),
+    path('upload-success/', upload_success_view, name='upload_success'),
 ]
